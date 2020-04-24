@@ -1,0 +1,4 @@
+name = "BondiToy"
+uuid = "5d6dacba-fb9a-4235-9417-8af1d0117f00"
+authors = ["Thanasis Giannakopoulos <giannakopoulos.th@gmail.com>"]
+version = "0.1.0"
