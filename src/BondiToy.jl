@@ -81,7 +81,7 @@ end
 
 # 2nd order accurate finite differences for 1st order derivatives along a
 # periodic direction
-function Dz!(f_z, f, sys::System)
+function Dz!(f_z::Matrix, f::Matrix, sys::System)
     NX, Nz = size(f)
     odz2 = 0.5 / sys.hz
 
@@ -98,7 +98,7 @@ function Dz!(f_z, f, sys::System)
 
     f_z
 end
-function Dz(f, sys)
+function Dz(f, sys::System)
     f_z = similar(f)
     Dz!(f_z, f, sys)
 end
