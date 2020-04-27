@@ -107,7 +107,7 @@ end
 # 2nd order accurate finite difference operator for 1st order derivatives along
 # a non-periodic direction. forward and backward 2nd order accurate finite
 # differences are used on the first and last points of the grid respectively
-function DX!(f_X, f, sys::System)
+function DX!(f_X::Matrix, f::Matrix, sys::System)
     NX, Nz = size(f)
     odX2 = 0.5 / sys.hX
 
@@ -124,7 +124,7 @@ function DX!(f_X, f, sys::System)
 
     f_X
 end
-function DX(f, sys)
+function DX(f, sys::System)
     f_X = similar(f)
     DX!(f_X, f, sys)
 end
