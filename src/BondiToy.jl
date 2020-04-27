@@ -1,6 +1,6 @@
 module BondiToy
 
-#greet() = print("Hello World!")
+export Param, run_toy
 
 using Parameters
 using DifferentialEquations
