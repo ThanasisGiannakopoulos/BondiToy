@@ -1,5 +1,21 @@
 
 using BondiToy
+using Parameters
+using Random
+
+@with_kw struct SH_noise <: IBVP
+    noise_amplitude :: Float64
+end
+
+BondiToy.ϕ0_of_uz(u::T, z::T, ibvp::IBVP) where {T<:Real} =
+    ibvp.noise_amplitude * randn(T)
+
+BondiToy.ψv0_of_uz(u::T, z::T, ibvp::IBVP) where {T<:Real} =
+    ibvp.noise_amplitude * randn(T)
+
+BondiToy.ψ0_of_Xz(X::T, z::T, ibvp::IBVP) where {T<:Real} =
+    ibvp.noise_amplitude * randn(T)
+
 
 toy_model = "SH_noise_B1_norms"
 root_dir="./run00"
@@ -23,12 +39,14 @@ p = Param(
     # for the LOPSIDED norm
     #noise_amplitude_drop = 0.125,
 
-    noise_amplitude = noise_amplitude_drop^D,
-
     out_dir = joinpath(root_dir, toy_model*"_"*string(noise_amplitude_drop),
                        "data_$(NX)_$(Nz)"),
 
     out_every = 4*16*2^D,
 )
 
-run_toy(p)
+ibvp = SH_noise(
+    noise_amplitude = noise_amplitude_drop^D,
+)
+
+run_toy(p, ibvp)

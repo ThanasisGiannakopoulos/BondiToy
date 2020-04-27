@@ -1,13 +1,12 @@
 module BondiToy
 
-export Param, run_toy
+export Param, IBVP, run_toy
 
 using Parameters
 using DifferentialEquations
 using Interpolations
 using HDF5
 using DelimitedFiles
-using Random
 using Printf
 
 @with_kw struct Param
@@ -17,14 +16,43 @@ using Printf
     cX                :: Float64 = 10.0
     rmin              :: Float64 = 2.0
     umax              :: Float64
-    # parameter that controls amplitude of noise
-    noise_amplitude   :: Float64
     # directory to save data
     out_dir           :: String
     out_every         :: Int
     compute_L2_norm   :: Bool = true
     compute_Lop_norm  :: Bool = true
 end
+
+
+"""
+Extend this type for the initial and boundary condition parameters
+"""
+abstract type IBVP end
+
+
+"""
+Function that defines the BCs of ϕ at r=rmin
+
+Needs signature ϕ0_of_uz(u::T, z::T, ibvp::IBVP) where {T<:Real}
+"""
+function ϕ0_of_uz end
+
+
+"""
+Function that defines the BCs of ψv at r=rmin
+
+Needs signature ψv0_of_uz(u::T, z::T, ibvp::IBVP) where {T<:Real}
+"""
+function ψv0_of_uz end
+
+
+"""
+Function that defines the ingoing mode of ψ at u=0, i.e. ψ(u=0,X,z)
+
+Needs signature ψ0_of_Xz(X::T, z::T, ibvp::IBVP) where {T<:Real}
+"""
+function ψ0_of_Xz end
+
 
 rtoX(r, cX, rmin) = (r .- rmin) ./ sqrt.(cX*cX .+ (r .- rmin).^2)
 Xtor(X, cX, rmin) = rmin .+ cX * X ./ sqrt.(1.0 .- X.^2)
@@ -101,24 +129,23 @@ function DX(f, sys)
     DX!(f_X, f, sys)
 end
 
-# this defines the functions that determine the BCs of ϕ and ψv at r=rmin
-function setup_BC(p::Param)
-    amp = p.noise_amplitude
-    global ϕ0_of_uz = (u,z) -> randn(Float64)*(amp) #*sin(z)
-    global ψv0_of_uz = (u,z) -> randn(Float64)*(amp) #*sin(z)
-end
-
-# Initial data: the ingoing mode at initial time i.e. ψ(u=0)
-function init_ψ(sys::System, p::Param)
+function init_ψ(sys::System, ibvp::IBVP)
     NX = length(sys.X)
     Nz = length(sys.z)
+    T  = typeof(sys.X[1])
 
-    amp = p.noise_amplitude
-    randn(NX, Nz) * amp
+    ψ0 = zeros(T, NX, Nz)
+
+    @inbounds for j in 1:Nz
+        @inbounds for i in 1:NX
+            ψ0[i,j] = ψ0_of_Xz(sys.X[i], sys.z[j], ibvp)
+        end
+    end
+    ψ0
 end
 
 # integrate in the null hypersurface
-function get_ϕψv!(ϕ, ψv, ψ, u, sys)
+function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::IBVP)
     NX, Nz = size(ψ)
 
     S_ϕ  = copy(ψ)
@@ -132,7 +159,7 @@ function get_ϕψv!(ϕ, ψv, ψ, u, sys)
 
         # this defines the outgoing mode i.e. boundary condition at each
         # timestep
-        ϕ0 = ϕ0_of_uz(u,sys.z[j])
+        ϕ0 = ϕ0_of_uz(u, sys.z[j], ibvp)
         # define the PDE problem
         prob_ϕ = ODEProblem(rhs_ϕ!, ϕ0, Xspan)
         # solve the PDE problem
@@ -152,7 +179,7 @@ function get_ϕψv!(ϕ, ψv, ψ, u, sys)
 
         # this defines the outgoing mode i.e. boundary condition at each
         # timestep
-        ψv0 = ψv0_of_uz(u,sys.z[j])
+        ψv0 = ψv0_of_uz(u, sys.z[j], ibvp)
         # define the PDE problem
         prob_ψv = ODEProblem(rhs_ψv!, ψv0, Xspan)
         # solve the PDE problem
@@ -163,10 +190,10 @@ function get_ϕψv!(ϕ, ψv, ψ, u, sys)
 
     ϕ, ψv
 end
-function get_ϕψv(ψ, u, sys)
+function get_ϕψv(ψ, u, sys, ibvp)
     ϕ    = similar(ψ)
     ψv   = similar(ψ)
-    get_ϕψv!(ϕ, ψv, ψ, u, sys)
+    get_ϕψv!(ϕ, ψv, ψ, u, sys, ibvp)
 end
 
 
@@ -178,8 +205,8 @@ function get_ψ_u!(ψ_u, ψ, ϕ, sys)
 
     ψ_u .= 0.5 * ψ_r .+ ψ_z .+ ϕ
 end
-function rhs_ψ!(dψ, ψ, sys, u)
-    ϕ, ψv = get_ϕψv(ψ, u, sys)
+function rhs_ψ!(dψ, ψ, (sys, ibvp), u)
+    ϕ, ψv = get_ϕψv(ψ, u, sys, ibvp)
     get_ψ_u!(dψ, ψ, ϕ, sys)
     nothing
 end
@@ -197,7 +224,7 @@ function write_2D(it::Int, t, data_dir::String, ψ::Array, ψv::Array, ϕ::Array
 end
 
 # function that performs the time evolution
-function run_toy(p::Param)
+function run_toy(p::Param, ibvp::IBVP)
 
     # pass the parameters of the system
     sys = System(p)
@@ -205,11 +232,8 @@ function run_toy(p::Param)
     # create the folders where data are saved
     data_dir = mkpath(p.out_dir)
 
-    # setup BC functions
-    setup_BC(p)
-
     # initialize ψ
-    ψ = init_ψ(sys, p)
+    ψ = init_ψ(sys, ibvp)
 
     # time span of the simulation
     tspan = (0.0, p.umax)
@@ -218,7 +242,7 @@ function run_toy(p::Param)
     dt0   = 0.25 * minimum([sys.hX, sys.hz])
 
     # define the PDE problem for time integration
-    prob  = ODEProblem(rhs_ψ!, ψ, tspan, sys)
+    prob  = ODEProblem(rhs_ψ!, ψ, tspan, (sys, ibvp))
     # http://docs.juliadiffeq.org/latest/basics/integrator.html
     integrator = init(prob, RK4(), save_everystep=false, dt=dt0, adaptive=false)
 
@@ -230,7 +254,7 @@ function run_toy(p::Param)
 
     it = 0
     t  = 0.0
-    ϕ, ψv = get_ϕψv(ψ, t, sys)
+    ϕ, ψv = get_ϕψv(ψ, t, sys, ibvp)
 
     # save initial data
     write_2D(it, t, data_dir, ψ, ψv, ϕ)
@@ -257,7 +281,7 @@ function run_toy(p::Param)
         it += 1
 
         ψ = f
-        get_ϕψv!(ϕ, ψv, ψ, t, sys)
+        get_ϕψv!(ϕ, ψv, ψ, t, sys, ibvp)
 
         @printf "%9d %9.3f |  %9.4g    %9.4g\n" it t minimum(ψ) maximum(ψ)
 
