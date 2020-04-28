@@ -103,6 +103,21 @@ function Dz(f, sys::System)
     Dz!(f_z, f, sys)
 end
 
+# Dz! was giving error for vector
+function Dz_1d(f::Vector, sys::System)
+    f_z = similar(f)
+    Nz = size(f)[1]
+    odz2 = 0.5 / sys.hz
+
+    @inbounds for j in 2:Nz-1
+            f_z[j] = (f[j+1] - f[j-1]) * odz2
+    end
+
+    f_z[1]   = (f[2] - f[end]) * odz2
+    f_z[end] = (f[1] - f[end-1]) * odz2
+
+    f_z
+end
 
 # 2nd order accurate finite difference operator for 1st order derivatives along
 # a non-periodic direction. forward and backward 2nd order accurate finite
@@ -144,48 +159,95 @@ function init_ψ(sys::System, ibvp::IBVP)
     ψ0
 end
 
-# integrate in the null hypersurface
+# integrate in the null hypersurface for nested intrinsic eqs
+# function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::IBVP)
+#     NX, Nz = size(ψ)
+
+#     S_ϕ  = copy(ψ)
+
+#     Threads.@threads for j in 1:Nz
+#         itp  = interpolate( S_ϕ[:,j], BSpline(Cubic(Flat(OnGrid()))) )
+#         sitp = scale(itp, sys.X[1]:sys.hX:sys.X[end])
+#         rhs_ϕ!(f, p, x) = sitp(x)
+
+#         Xspan = (sys.X[1], sys.X[end])
+
+#         # this defines the outgoing mode i.e. boundary condition at each
+#         # timestep
+#         ϕ0 = ϕ0_of_uz(u, sys.z[j], ibvp)
+#         # define the PDE problem
+#         prob_ϕ = ODEProblem(rhs_ϕ!, ϕ0, Xspan)
+#         # solve the PDE problem
+#         sol_ϕ  = solve(prob_ϕ, SSPRK22(), dt=sys.hX, adaptive=false)
+#         # pass the above solution
+#         ϕ[:, j] .= sol_ϕ.(sys.X)
+#     end
+
+#     S_ψv  = ϕ .+ ψ
+
+#     Threads.@threads for j in 1:Nz
+#         itp  = interpolate( S_ψv[:,j], BSpline(Cubic(Flat(OnGrid()))) )
+#         sitp = scale(itp, sys.X[1]:sys.hX:sys.X[end])
+#         rhs_ψv!(f, p, x) = sitp(x)
+
+#         Xspan = (sys.X[1], sys.X[end])
+
+#         # this defines the outgoing mode i.e. boundary condition at each
+#         # timestep
+#         ψv0 = ψv0_of_uz(u, sys.z[j], ibvp)
+#         # define the PDE problem
+#         prob_ψv = ODEProblem(rhs_ψv!, ψv0, Xspan)
+#         # solve the PDE problem
+#         sol_ψv  = solve(prob_ψv, SSPRK22(), dt=sys.hX, adaptive=false)
+#         # pass the above solution
+#         ψv[:, j] .= sol_ψv.(sys.X)
+#     end
+
+#     ϕ, ψv
+# end
+
+# integrate in the null hypersurface for non-nested intrinsic eqs
+# the rhs for the intrinsic coupled PDE of ϕ and ψv
+function intrinsic_rhs!(dv, v, sys, x)
+       dv[1] = v[2]
+       dv[2] = Dz_1d(v[1], sys)
+end
 function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::IBVP)
     NX, Nz = size(ψ)
+    ϕ0  = zeros(Nz)
+    ψv0 = zeros(Nz)
 
-    S_ϕ  = copy(ψ)
-
+    # this defines the outgoing mode i.e. boundary condition at each
+    # timestep
     Threads.@threads for j in 1:Nz
-        itp  = interpolate( S_ϕ[:,j], BSpline(Cubic(Flat(OnGrid()))) )
-        sitp = scale(itp, sys.X[1]:sys.hX:sys.X[end])
-        rhs_ϕ!(f, p, x) = sitp(x)
-
-        Xspan = (sys.X[1], sys.X[end])
-
-        # this defines the outgoing mode i.e. boundary condition at each
-        # timestep
-        ϕ0 = ϕ0_of_uz(u, sys.z[j], ibvp)
-        # define the PDE problem
-        prob_ϕ = ODEProblem(rhs_ϕ!, ϕ0, Xspan)
-        # solve the PDE problem
-        sol_ϕ  = solve(prob_ϕ, SSPRK22(), dt=sys.hX, adaptive=false)
-        # pass the above solution
-        ϕ[:, j] .= sol_ϕ.(sys.X)
+        ϕ0[j]  = ϕ0_of_uz(u, sys.z[j], ibvp)
+        ψv0[j] = ψv0_of_uz(u, sys.z[j], ibvp)
     end
+    
+    # save the ID to ϕ and ψv of (x,z)
+    ϕ[1,:]  = ϕ0
+    ψv[1,:] = ψv0
+    
+    # write the ID as a vector for the coupled PDE system
+    v0 = VectorOfArray([ϕ0, ψv0])
 
-    S_ψv  = ϕ .+ ψ
+    # define the x-span to solve the PDE for
+    Xspan = (sys.X[1], sys.X[end])
+    
+    # write the PDE as an ODE prob
+    intrinsic_prob = ODEProblem(intrinsic_rhs!, v0, Xspan, sys)
 
-    Threads.@threads for j in 1:Nz
-        itp  = interpolate( S_ψv[:,j], BSpline(Cubic(Flat(OnGrid()))) )
-        sitp = scale(itp, sys.X[1]:sys.hX:sys.X[end])
-        rhs_ψv!(f, p, x) = sitp(x)
+    # def the x-integrator
+    x_integrator = init(intrinsic_prob, SSPRK22(),
+                        save_everytimestep=false, dt=sys.hX, adaptive=false)
 
-        Xspan = (sys.X[1], sys.X[end])
+    iter = 2
+    for (f,t) in tuples(x_integrator)
 
-        # this defines the outgoing mode i.e. boundary condition at each
-        # timestep
-        ψv0 = ψv0_of_uz(u, sys.z[j], ibvp)
-        # define the PDE problem
-        prob_ψv = ODEProblem(rhs_ψv!, ψv0, Xspan)
-        # solve the PDE problem
-        sol_ψv  = solve(prob_ψv, SSPRK22(), dt=sys.hX, adaptive=false)
-        # pass the above solution
-        ψv[:, j] .= sol_ψv.(sys.X)
+        ϕ[iter,:]  = f[1]
+        ψv[iter,:] = f[2]
+
+        iter += 1
     end
 
     ϕ, ψv
