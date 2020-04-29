@@ -212,13 +212,13 @@ function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::NestedIBVP)
 end
 
 # integrate in the null hypersurface for non-nested intrinsic eqs
-# the rhs for the intrinsic coupled PDE of ϕ and ψv
 function intrinsic_rhs!(dv, v, sys, x)
     dϕ  = dv[1]
     dψv = dv[2]
     ϕ   = v[1]
     ψv  = v[2]
 
+    # the rhs for the intrinsic coupled PDE of ϕ and ψv
     dϕ .= ψv
     Dz!(dψv, ϕ, sys)  # dψv = ∂_z ϕ
     dv
@@ -251,13 +251,16 @@ function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::CoupledIBVP)
     x_integrator = init(intrinsic_prob, SSPRK22(),
                         save_everytimestep=false, dt=sys.hX, adaptive=false)
 
+    # the following assumes that the integrator is stepping *exactly* at the X
+    # grid points. this should be true with the above options of dt=sys.hX,
+    # adaptive=false, but we must remember to change things if using an adaptive
+    # integrator or something similar.
     iter = 1
     for (f,t) in tuples(x_integrator)
         iter += 1
 
         ϕ[iter,:]  = f[1]
         ψv[iter,:] = f[2]
-
     end
 
     ϕ, ψv
