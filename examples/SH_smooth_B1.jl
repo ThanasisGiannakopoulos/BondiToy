@@ -2,7 +2,7 @@
 using BondiToy
 using Parameters
 
-struct SH_smooth <: IBVP end
+struct SH_smooth_B1 <: NestedIBVP end
 
 # TODO: maybe promote 0.5 and 0.1 to parameters?
 function outgoing(u, z)
@@ -10,15 +10,15 @@ function outgoing(u, z)
 end
 
 
-BondiToy.ϕ0_of_uz(u::T, z::T, ibvp::IBVP) where {T<:Real} =
+BondiToy.ϕ0_of_uz(u::T, z::T, ibvp::NestedIBVP) where {T<:Real} =
     3 * outgoing(u, z)
 
-BondiToy.ψv0_of_uz(u::T, z::T, ibvp::IBVP) where {T<:Real} =
+BondiToy.ψv0_of_uz(u::T, z::T, ibvp::NestedIBVP) where {T<:Real} =
     outgoing(u, z)
 
 # smooth initial data: gaussian in X and sin in z
 # TODO: maybe promote 0.5 and 0.1 to parameters?
-BondiToy.ψ0_of_Xz(X::T, z::T, ibvp::IBVP) where {T<:Real} =
+BondiToy.ψ0_of_Xz(X::T, z::T, ibvp::NestedIBVP) where {T<:Real} =
     exp( -((X - 0.5)/0.1)^2 ) * sin(z)
 
 
@@ -50,6 +50,6 @@ p = Param(
     out_every = 4*16*2^D,
 )
 
-ibvp = SH_smooth()
+ibvp = SH_smooth_B1()
 
 run_toy(p, ibvp)

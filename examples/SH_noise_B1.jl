@@ -3,17 +3,17 @@ using BondiToy
 using Parameters
 using Random
 
-@with_kw struct SH_noise <: IBVP
+@with_kw struct SH_noise_B1 <: NestedIBVP
     noise_amplitude :: Float64
 end
 
-BondiToy.ϕ0_of_uz(u::T, z::T, ibvp::IBVP) where {T<:Real} =
+BondiToy.ϕ0_of_uz(u::T, z::T, ibvp::SH_noise_B1) where {T<:Real} =
     ibvp.noise_amplitude * randn(T)
 
-BondiToy.ψv0_of_uz(u::T, z::T, ibvp::IBVP) where {T<:Real} =
+BondiToy.ψv0_of_uz(u::T, z::T, ibvp::SH_noise_B1) where {T<:Real} =
     ibvp.noise_amplitude * randn(T)
 
-BondiToy.ψ0_of_Xz(X::T, z::T, ibvp::IBVP) where {T<:Real} =
+BondiToy.ψ0_of_Xz(X::T, z::T, ibvp::SH_noise_B1) where {T<:Real} =
     ibvp.noise_amplitude * randn(T)
 
 
@@ -45,7 +45,7 @@ p = Param(
     out_every = 4*16*2^D,
 )
 
-ibvp = SH_noise(
+ibvp = SH_noise_B1(
     noise_amplitude = noise_amplitude_drop^D,
 )
 

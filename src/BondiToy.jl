@@ -165,51 +165,51 @@ function init_ψ(sys::System, ibvp::IBVP)
 end
 
 # integrate in the null hypersurface for nested intrinsic eqs
-# function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::NestedIBVP)
-#     NX, Nz = size(ψ)
+function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::NestedIBVP)
+    NX, Nz = size(ψ)
 
-#     S_ϕ  = copy(ψ)
+    S_ϕ  = copy(ψ)
 
-#     Threads.@threads for j in 1:Nz
-#         itp  = interpolate( S_ϕ[:,j], BSpline(Cubic(Flat(OnGrid()))) )
-#         sitp = scale(itp, sys.X[1]:sys.hX:sys.X[end])
-#         rhs_ϕ!(f, p, x) = sitp(x)
+    Threads.@threads for j in 1:Nz
+        itp  = interpolate( S_ϕ[:,j], BSpline(Cubic(Flat(OnGrid()))) )
+        sitp = scale(itp, sys.X[1]:sys.hX:sys.X[end])
+        rhs_ϕ!(f, p, x) = sitp(x)
 
-#         Xspan = (sys.X[1], sys.X[end])
+        Xspan = (sys.X[1], sys.X[end])
 
-#         # this defines the outgoing mode i.e. boundary condition at each
-#         # timestep
-#         ϕ0 = ϕ0_of_uz(u, sys.z[j], ibvp)
-#         # define the PDE problem
-#         prob_ϕ = ODEProblem(rhs_ϕ!, ϕ0, Xspan)
-#         # solve the PDE problem
-#         sol_ϕ  = solve(prob_ϕ, SSPRK22(), dt=sys.hX, adaptive=false)
-#         # pass the above solution
-#         ϕ[:, j] .= sol_ϕ.(sys.X)
-#     end
+        # this defines the outgoing mode i.e. boundary condition at each
+        # timestep
+        ϕ0 = ϕ0_of_uz(u, sys.z[j], ibvp)
+        # define the PDE problem
+        prob_ϕ = ODEProblem(rhs_ϕ!, ϕ0, Xspan)
+        # solve the PDE problem
+        sol_ϕ  = solve(prob_ϕ, SSPRK22(), dt=sys.hX, adaptive=false)
+        # pass the above solution
+        ϕ[:, j] .= sol_ϕ.(sys.X)
+    end
 
-#     S_ψv  = ϕ .+ ψ
+    S_ψv  = ϕ .+ ψ
 
-#     Threads.@threads for j in 1:Nz
-#         itp  = interpolate( S_ψv[:,j], BSpline(Cubic(Flat(OnGrid()))) )
-#         sitp = scale(itp, sys.X[1]:sys.hX:sys.X[end])
-#         rhs_ψv!(f, p, x) = sitp(x)
+    Threads.@threads for j in 1:Nz
+        itp  = interpolate( S_ψv[:,j], BSpline(Cubic(Flat(OnGrid()))) )
+        sitp = scale(itp, sys.X[1]:sys.hX:sys.X[end])
+        rhs_ψv!(f, p, x) = sitp(x)
 
-#         Xspan = (sys.X[1], sys.X[end])
+        Xspan = (sys.X[1], sys.X[end])
 
-#         # this defines the outgoing mode i.e. boundary condition at each
-#         # timestep
-#         ψv0 = ψv0_of_uz(u, sys.z[j], ibvp)
-#         # define the PDE problem
-#         prob_ψv = ODEProblem(rhs_ψv!, ψv0, Xspan)
-#         # solve the PDE problem
-#         sol_ψv  = solve(prob_ψv, SSPRK22(), dt=sys.hX, adaptive=false)
-#         # pass the above solution
-#         ψv[:, j] .= sol_ψv.(sys.X)
-#     end
+        # this defines the outgoing mode i.e. boundary condition at each
+        # timestep
+        ψv0 = ψv0_of_uz(u, sys.z[j], ibvp)
+        # define the PDE problem
+        prob_ψv = ODEProblem(rhs_ψv!, ψv0, Xspan)
+        # solve the PDE problem
+        sol_ψv  = solve(prob_ψv, SSPRK22(), dt=sys.hX, adaptive=false)
+        # pass the above solution
+        ψv[:, j] .= sol_ψv.(sys.X)
+    end
 
-#     ϕ, ψv
-# end
+    ϕ, ψv
+end
 
 # integrate in the null hypersurface for non-nested intrinsic eqs
 # the rhs for the intrinsic coupled PDE of ϕ and ψv
