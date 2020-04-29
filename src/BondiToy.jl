@@ -173,7 +173,7 @@ function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::NestedIBVP)
     Threads.@threads for j in 1:Nz
         itp  = interpolate( S_ϕ[:,j], BSpline(Cubic(Flat(OnGrid()))) )
         sitp = scale(itp, sys.X[1]:sys.hX:sys.X[end])
-        rhs_ϕ!(f, p, x) = sitp(x)
+        rhs_ϕ(f, p, x) = sitp(x)
 
         Xspan = (sys.X[1], sys.X[end])
 
@@ -181,7 +181,7 @@ function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::NestedIBVP)
         # timestep
         ϕ0 = ϕ0_of_uz(u, sys.z[j], ibvp)
         # define the PDE problem
-        prob_ϕ = ODEProblem(rhs_ϕ!, ϕ0, Xspan)
+        prob_ϕ = ODEProblem(rhs_ϕ, ϕ0, Xspan)
         # solve the PDE problem
         sol_ϕ  = solve(prob_ϕ, SSPRK22(), dt=sys.hX, adaptive=false)
         # pass the above solution
@@ -193,7 +193,7 @@ function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::NestedIBVP)
     Threads.@threads for j in 1:Nz
         itp  = interpolate( S_ψv[:,j], BSpline(Cubic(Flat(OnGrid()))) )
         sitp = scale(itp, sys.X[1]:sys.hX:sys.X[end])
-        rhs_ψv!(f, p, x) = sitp(x)
+        rhs_ψv(f, p, x) = sitp(x)
 
         Xspan = (sys.X[1], sys.X[end])
 
@@ -201,7 +201,7 @@ function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::NestedIBVP)
         # timestep
         ψv0 = ψv0_of_uz(u, sys.z[j], ibvp)
         # define the PDE problem
-        prob_ψv = ODEProblem(rhs_ψv!, ψv0, Xspan)
+        prob_ψv = ODEProblem(rhs_ψv, ψv0, Xspan)
         # solve the PDE problem
         sol_ψv  = solve(prob_ψv, SSPRK22(), dt=sys.hX, adaptive=false)
         # pass the above solution
