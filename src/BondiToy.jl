@@ -103,11 +103,8 @@ function Dz!(f_z::Matrix, f::Matrix, sys::System)
 
     f_z
 end
-function Dz(f, sys::System)
-    f_z = similar(f)
-    Dz!(f_z, f, sys)
-end
 
+# now acting on vectors
 function Dz!(f_z::Vector, f::Vector, sys::System)
     Nz = length(f)
     odz2 = 0.5 / sys.hz
@@ -120,6 +117,11 @@ function Dz!(f_z::Vector, f::Vector, sys::System)
     f_z[end] = (f[1] - f[end-1]) * odz2
 
     f_z
+end
+
+function Dz(f, sys::System)
+    f_z = similar(f)
+    Dz!(f_z, f, sys)
 end
 
 # 2nd order accurate finite difference operator for 1st order derivatives along
