@@ -108,14 +108,12 @@ function Dz(f, sys::System)
     Dz!(f_z, f, sys)
 end
 
-# Dz! was giving error for vector
-function Dz_1d(f::Vector, sys::System)
-    f_z = similar(f)
-    Nz = size(f)[1]
+function Dz!(f_z::Vector, f::Vector, sys::System)
+    Nz = length(f)
     odz2 = 0.5 / sys.hz
 
     @inbounds for j in 2:Nz-1
-            f_z[j] = (f[j+1] - f[j-1]) * odz2
+        f_z[j] = (f[j+1] - f[j-1]) * odz2
     end
 
     f_z[1]   = (f[2] - f[end]) * odz2
@@ -215,7 +213,7 @@ end
 # the rhs for the intrinsic coupled PDE of ϕ and ψv
 function intrinsic_rhs!(dv, v, sys, x)
        dv[1] = v[2]
-       dv[2] = Dz_1d(v[1], sys)
+       dv[2] = Dz(v[1], sys)
 end
 function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::CoupledIBVP)
     NX, Nz = size(ψ)
