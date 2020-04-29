@@ -65,13 +65,13 @@ rtoX(r, cX, rmin) = (r .- rmin) ./ sqrt.(cX*cX .+ (r .- rmin).^2)
 Xtor(X, cX, rmin) = rmin .+ cX * X ./ sqrt.(1.0 .- X.^2)
 dX_dr(X, cX) = (1.0 .- X.^2).^1.5 ./ cX
 
-struct System
-    X    :: Vector
-    r    :: Vector
-    dXdr :: Vector
-    hX   :: Float64
-    z    :: Vector
-    hz   :: Float64
+struct System{T}
+    X    :: Vector{T}
+    r    :: Vector{T}
+    dXdr :: Vector{T}
+    hX   :: T
+    z    :: Vector{T}
+    hz   :: T
 end
 function System(p::Param)
     hX = 1.0 / (p.NX-1)
@@ -83,7 +83,7 @@ function System(p::Param)
     rr    = Xtor(X, p.cX, p.rmin)
     dXdr  = dX_dr(X, p.cX)
 
-    System(X, rr, dXdr, hX, z, hz )
+    System{typeof(hX)}(X, rr, dXdr, hX, z, hz)
 end
 
 # 2nd order accurate finite differences for 1st order derivatives along a
@@ -225,10 +225,10 @@ function intrinsic_rhs!(dv, v, sys, x)
     Dz!(dψv, ϕ, sys)  # dψv = ∂_z ϕ
     dv
 end
-function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::CoupledIBVP)
+function get_ϕψv!(ϕ, ψv, ψ, u, sys::System{T}, ibvp::CoupledIBVP) where {T}
     NX, Nz = size(ψ)
-    ϕ0  = zeros(Nz)
-    ψv0 = zeros(Nz)
+    ϕ0  = zeros(T, Nz)
+    ψv0 = zeros(T, Nz)
 
     # this defines the outgoing mode i.e. boundary condition at each timestep
     @inbounds for j in 1:Nz
