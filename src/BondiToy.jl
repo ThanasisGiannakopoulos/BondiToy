@@ -214,8 +214,14 @@ end
 # integrate in the null hypersurface for non-nested intrinsic eqs
 # the rhs for the intrinsic coupled PDE of ϕ and ψv
 function intrinsic_rhs!(dv, v, sys, x)
-       dv[1] = v[2]
-       dv[2] = Dz(v[1], sys)
+    dϕ  = dv[1]
+    dψv = dv[2]
+    ϕ   = v[1]
+    ψv  = v[2]
+
+    dϕ .= ψv
+    Dz!(dψv, ϕ, sys)  # dψv = ∂_z ϕ
+    dv
 end
 function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::CoupledIBVP)
     NX, Nz = size(ψ)
@@ -228,7 +234,7 @@ function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::CoupledIBVP)
         ψv0[j] = ψv0_of_uz(u, sys.z[j], ibvp)
     end
 
-    # save the ID to ϕ and ψv of (x,z)
+    # save the outgoing mode at X=X0 to ϕ and ψv of (x,z)
     ϕ[1,:]  = ϕ0
     ψv[1,:] = ψv0
 
@@ -245,13 +251,13 @@ function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::CoupledIBVP)
     x_integrator = init(intrinsic_prob, SSPRK22(),
                         save_everytimestep=false, dt=sys.hX, adaptive=false)
 
-    iter = 2
+    iter = 1
     for (f,t) in tuples(x_integrator)
+        iter += 1
 
         ϕ[iter,:]  = f[1]
         ψv[iter,:] = f[2]
 
-        iter += 1
     end
 
     ϕ, ψv
