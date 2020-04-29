@@ -8,6 +8,7 @@ using Interpolations
 using HDF5
 using DelimitedFiles
 using Printf
+using RecursiveArrayTools
 
 @with_kw struct Param
     # discretization parameters
