@@ -366,6 +366,7 @@ function run_toy(p::Param, ibvp::IBVP)
     end
 
     # store norms
+    # TODO: do this along the evolution (instead of waiting for the end)
 
     if p.compute_L2_norm
         outfile = joinpath(data_dir, "L2_norm.dat")
