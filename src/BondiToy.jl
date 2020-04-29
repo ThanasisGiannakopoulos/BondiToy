@@ -185,7 +185,7 @@ function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::NestedIBVP)
         # solve the PDE problem
         sol_ϕ  = solve(prob_ϕ, SSPRK22(), dt=sys.hX, adaptive=false)
         # pass the above solution
-        ϕ[:, j] .= sol_ϕ.(sys.X)
+        ϕ[:, j] = sol_ϕ.(sys.X)
     end
 
     S_ψv  = ϕ .+ ψ
@@ -205,7 +205,7 @@ function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::NestedIBVP)
         # solve the PDE problem
         sol_ψv  = solve(prob_ψv, SSPRK22(), dt=sys.hX, adaptive=false)
         # pass the above solution
-        ψv[:, j] .= sol_ψv.(sys.X)
+        ψv[:, j] = sol_ψv.(sys.X)
     end
 
     ϕ, ψv
