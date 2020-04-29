@@ -335,14 +335,22 @@ function run_toy(p::Param, ibvp::IBVP)
     write_2D(it, t, data_dir, ψ, ψv, ϕ)
 
     if p.compute_L2_norm
-        L2_norm   = sqrt(sys.hz*sys.hX*sum(ψ.*ψ  + ψv.*ψv + ϕ.*ϕ))
-        L2_norm_t = [[t, L2_norm]]
+        L2_norm = sqrt(sys.hz*sys.hX*sum(ψ.*ψ  + ψv.*ψv + ϕ.*ϕ))
+        outfile = joinpath(data_dir, "L2_norm.dat")
+        open(outfile, "w") do io
+            println(io, "# t        |      norm_L2")
+            println(io, "$t  \t  $L2_norm")
+        end
     end
 
     if p.compute_Lop_norm
         ϕz = Dz(ϕ, sys)
-        Lopside_norm   = sqrt(sys.hz*sys.hX*sum(ψ.*ψ  + ψv.*ψv + ϕ.*ϕ + ϕz.*ϕz ))
-        Lopside_norm_t = [[t, Lopside_norm]]
+        Lopside_norm = sqrt(sys.hz*sys.hX*sum(ψ.*ψ  + ψv.*ψv + ϕ.*ϕ + ϕz.*ϕz ))
+        outfile = joinpath(data_dir, "Lopside_norm.dat")
+        open(outfile, "w") do io
+            println(io, "# t        |      norm_Lop")
+            println(io, "$t  \t  $Lopside_norm")
+        end
     end
 
     println("-------------------------------------------------------------")
@@ -361,39 +369,26 @@ function run_toy(p::Param, ibvp::IBVP)
         @printf "%9d %9.3f |  %9.4g    %9.4g\n" it t minimum(ψ) maximum(ψ)
 
         if p.compute_L2_norm
-            L2_norm   = sqrt(sys.hz*sys.hX*sum(ψ.*ψ  + ψv.*ψv + ϕ.*ϕ))
-            push!(L2_norm_t, [t, L2_norm])
+            L2_norm = sqrt(sys.hz*sys.hX*sum(ψ.*ψ  + ψv.*ψv + ϕ.*ϕ))
+            outfile = joinpath(data_dir, "L2_norm.dat")
+            open(outfile, "a") do io
+                println(io, "$t  \t  $L2_norm")
+            end
         end
 
         if p.compute_Lop_norm
             Dz!(ϕz, ϕ, sys)
-            Lopside_norm   = sqrt(sys.hz*sys.hX*sum(ψ.*ψ  + ψv.*ψv + ϕ.*ϕ + ϕz.*ϕz ))
-            push!(Lopside_norm_t, [t, Lopside_norm])
+            Lopside_norm = sqrt(sys.hz*sys.hX*sum(ψ.*ψ  + ψv.*ψv + ϕ.*ϕ + ϕz.*ϕz ))
+            outfile = joinpath(data_dir, "Lopside_norm.dat")
+            open(outfile, "a") do io
+                println(io, "$t  \t  $Lopside_norm")
+            end
         end
 
         if it % p.out_every == 0
             write_2D(it, t, data_dir, ψ, ψv, ϕ)
         end
 
-    end
-
-    # store norms
-    # TODO: do this along the evolution (instead of waiting for the end)
-
-    if p.compute_L2_norm
-        outfile = joinpath(data_dir, "L2_norm.dat")
-        open(outfile, "w") do io
-            println(io, "# t      |      norm_L2")
-            writedlm(io, L2_norm_t)
-        end
-    end
-
-    if p.compute_Lop_norm
-        outfile = joinpath(data_dir, "Lopside_norm.dat")
-        open(outfile, "w") do io
-            println(io, "# t      |      norm_Lop")
-            writedlm(io, Lopside_norm_t)
-        end
     end
 
     println("-------------------------------------------------------------")
