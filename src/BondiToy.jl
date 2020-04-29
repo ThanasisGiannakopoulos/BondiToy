@@ -222,23 +222,22 @@ function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::CoupledIBVP)
     ϕ0  = zeros(Nz)
     ψv0 = zeros(Nz)
 
-    # this defines the outgoing mode i.e. boundary condition at each
-    # timestep
-    Threads.@threads for j in 1:Nz
+    # this defines the outgoing mode i.e. boundary condition at each timestep
+    @inbounds for j in 1:Nz
         ϕ0[j]  = ϕ0_of_uz(u, sys.z[j], ibvp)
         ψv0[j] = ψv0_of_uz(u, sys.z[j], ibvp)
     end
-    
+
     # save the ID to ϕ and ψv of (x,z)
     ϕ[1,:]  = ϕ0
     ψv[1,:] = ψv0
-    
+
     # write the ID as a vector for the coupled PDE system
     v0 = VectorOfArray([ϕ0, ψv0])
 
     # define the x-span to solve the PDE for
     Xspan = (sys.X[1], sys.X[end])
-    
+
     # write the PDE as an ODE prob
     intrinsic_prob = ODEProblem(intrinsic_rhs!, v0, Xspan, sys)
 
