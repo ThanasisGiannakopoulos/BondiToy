@@ -19,9 +19,11 @@ using RecursiveArrayTools
     umax              :: Float64
     # directory to save data
     out_dir           :: String
-    out_every         :: Int
-    compute_L2_norm   :: Bool = true
-    compute_Lop_norm  :: Bool = true
+
+    # how often to save data
+    out_every               :: Int
+    compute_L2_norm_every   :: Int = 1 # set to negative values to turn off
+    compute_Lop_norm_every  :: Int = 1 # set to negative values to turn off
 end
 
 
@@ -334,7 +336,7 @@ function run_toy(p::Param, ibvp::IBVP)
     # save initial data
     write_2D(it, t, data_dir, ψ, ψv, ϕ)
 
-    if p.compute_L2_norm
+    if p.compute_L2_norm_every > 0
         L2_norm = sqrt(sys.hz*sys.hX*sum(ψ.*ψ  + ψv.*ψv + ϕ.*ϕ))
         outfile = joinpath(data_dir, "L2_norm.dat")
         open(outfile, "w") do io
@@ -343,7 +345,7 @@ function run_toy(p::Param, ibvp::IBVP)
         end
     end
 
-    if p.compute_Lop_norm
+    if p.compute_Lop_norm_every > 0
         ϕz = Dz(ϕ, sys)
         Lopside_norm = sqrt(sys.hz*sys.hX*sum(ψ.*ψ  + ψv.*ψv + ϕ.*ϕ + ϕz.*ϕz ))
         outfile = joinpath(data_dir, "Lopside_norm.dat")
@@ -368,7 +370,7 @@ function run_toy(p::Param, ibvp::IBVP)
 
         @printf "%9d %9.3f |  %9.4g    %9.4g\n" it t minimum(ψ) maximum(ψ)
 
-        if p.compute_L2_norm
+        if p.compute_L2_norm_every > 0 && it % p.compute_L2_norm_every == 0
             L2_norm = sqrt(sys.hz*sys.hX*sum(ψ.*ψ  + ψv.*ψv + ϕ.*ϕ))
             outfile = joinpath(data_dir, "L2_norm.dat")
             open(outfile, "a") do io
@@ -376,7 +378,7 @@ function run_toy(p::Param, ibvp::IBVP)
             end
         end
 
-        if p.compute_Lop_norm
+        if p.compute_Lop_norm_every > 0 && it % p.compute_Lop_norm_every == 0
             Dz!(ϕz, ϕ, sys)
             Lopside_norm = sqrt(sys.hz*sys.hX*sum(ψ.*ψ  + ψv.*ψv + ϕ.*ϕ + ϕz.*ϕz ))
             outfile = joinpath(data_dir, "Lopside_norm.dat")
@@ -388,12 +390,10 @@ function run_toy(p::Param, ibvp::IBVP)
         if it % p.out_every == 0
             write_2D(it, t, data_dir, ψ, ψv, ϕ)
         end
-
     end
 
     println("-------------------------------------------------------------")
     println("Done.")
-
 end
 
 end # module
