@@ -1,6 +1,6 @@
 module BondiToy
 
-export Param, IBVP, run_toy
+export Param, NestedIBVP, CoupledIBVP, run_toy
 
 using Parameters
 using DifferentialEquations
@@ -26,10 +26,14 @@ end
 
 
 """
-Extend this type for the initial and boundary condition parameters
+Extend this type for the initial and boundary condition parameters. The IBVP can
+be nested (each intrinsic equation can be solved one after the other) or coupled
+(the intrinsic equations are coupled).
 """
 abstract type IBVP end
 
+abstract type NestedIBVP  <: IBVP end
+abstract type CoupledIBVP <: IBVP end
 
 """
 Function that defines the BCs of ϕ at r=rmin
@@ -161,7 +165,7 @@ function init_ψ(sys::System, ibvp::IBVP)
 end
 
 # integrate in the null hypersurface for nested intrinsic eqs
-# function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::IBVP)
+# function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::NestedIBVP)
 #     NX, Nz = size(ψ)
 
 #     S_ϕ  = copy(ψ)
@@ -213,7 +217,7 @@ function intrinsic_rhs!(dv, v, sys, x)
        dv[1] = v[2]
        dv[2] = Dz_1d(v[1], sys)
 end
-function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::IBVP)
+function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::CoupledIBVP)
     NX, Nz = size(ψ)
     ϕ0  = zeros(Nz)
     ψv0 = zeros(Nz)
