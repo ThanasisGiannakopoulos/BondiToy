@@ -151,10 +151,9 @@ function DX(f, sys::System)
     DX!(f_X, f, sys)
 end
 
-function init_ψ(sys::System, ibvp::IBVP)
+function init_ψ(sys::System{T}, ibvp::IBVP) where {T}
     NX = length(sys.X)
     Nz = length(sys.z)
-    T  = typeof(sys.X[1])
 
     ψ0 = zeros(T, NX, Nz)
 
