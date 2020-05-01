@@ -33,6 +33,13 @@ be nested (each intrinsic equation can be solved one after the other) or coupled
 """
 abstract type IBVP end
 
+"""
+The NestedIBVP structure encodes all the models with nested intrinsic
+equations, both SH and WH, and for sources B0, B1 and B2.  It needs
+the paremeters az_21, b11, b13, b21, b22, b33, which are the elements
+of the angular principal matrix Az and the lower order matrix B,
+respectively.
+"""
 abstract type NestedIBVP  <: IBVP end
 abstract type CoupledIBVP <: IBVP end
 
@@ -168,12 +175,12 @@ end
 function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::NestedIBVP)
     NX, Nz = size(ψ)
 
-    S_ϕ  = copy(ψ)
+    S_ϕ  = ibvp.b13 * copy(ψ)
 
     Threads.@threads for j in 1:Nz
         itp  = interpolate( S_ϕ[:,j], BSpline(Cubic(Flat(OnGrid()))) )
         sitp = scale(itp, sys.X[1]:sys.hX:sys.X[end])
-        rhs_ϕ(f, p, x) = sitp(x)
+        rhs_ϕ(f, p, x) = sitp(x) + ibvp.b11 * f
 
         Xspan = (sys.X[1], sys.X[end])
 
@@ -188,12 +195,13 @@ function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::NestedIBVP)
         ϕ[:, j] = sol_ϕ.(sys.X)
     end
 
-    S_ψv  = ϕ .+ ψ
+    ϕ_z = Dz(ϕ, sys)
+    S_ψv  = ibvp.az_21 * ϕ_z .+ ibvp.b21 * ϕ .+ ibvp.b23 * ψ
 
     Threads.@threads for j in 1:Nz
         itp  = interpolate( S_ψv[:,j], BSpline(Cubic(Flat(OnGrid()))) )
         sitp = scale(itp, sys.X[1]:sys.hX:sys.X[end])
-        rhs_ψv(f, p, x) = sitp(x)
+        rhs_ψv(f, p, x) = sitp(x) + ibvp.b22 * f
 
         Xspan = (sys.X[1], sys.X[end])
 

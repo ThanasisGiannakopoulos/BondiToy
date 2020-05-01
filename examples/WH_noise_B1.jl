@@ -3,7 +3,7 @@ using BondiToy
 using Parameters
 using Random
 
-@with_kw struct SH_noise_B1 <: NestedIBVP
+@with_kw struct WH_noise_B1 <: NestedIBVP
     noise_amplitude :: Float64
     # the element of the angular principal matrix Az that controls the
     # hyperbolicity of the toy model.
@@ -17,17 +17,17 @@ using Random
     b23 :: Int
 end
 
-BondiToy.ϕ0_of_uz(u::T, z::T, ibvp::SH_noise_B1) where {T<:Real} =
+BondiToy.ϕ0_of_uz(u::T, z::T, ibvp::WH_noise_B1) where {T<:Real} =
     ibvp.noise_amplitude * randn(T)
 
-BondiToy.ψv0_of_uz(u::T, z::T, ibvp::SH_noise_B1) where {T<:Real} =
+BondiToy.ψv0_of_uz(u::T, z::T, ibvp::WH_noise_B1) where {T<:Real} =
     ibvp.noise_amplitude * randn(T)
 
-BondiToy.ψ0_of_Xz(X::T, z::T, ibvp::SH_noise_B1) where {T<:Real} =
+BondiToy.ψ0_of_Xz(X::T, z::T, ibvp::WH_noise_B1) where {T<:Real} =
     ibvp.noise_amplitude * randn(T)
 
 
-toy_model = "SH_noise_B1_norms"
+toy_model = "WH_noise_B1_norms"
 root_dir="./run00"
 
 D = 4
@@ -55,14 +55,14 @@ p = Param(
     out_every = 4*16*2^D,
 )
 
-ibvp = SH_noise_B1(
+ibvp = WH_noise_B1(
     noise_amplitude = noise_amplitude_drop^D,
-    az_21 = 0, # 0 for SH; 1 for WH
-    b11  = 0,
-    b13  = 1,
-    b21  = 1,
-    b22  = 0,
-    b23  = 1,
+    az_21 = 1, # 0 for SH; 1 for WH
+    b11 = 0,
+    b13 = 1,
+    b21 = 1,
+    b22 = 0,
+    b23 = 1,
 )
 
 run_toy(p, ibvp)

@@ -2,7 +2,7 @@
 using BondiToy
 using Parameters
 
-@with_kw struct SH_smooth_B1 <: NestedIBVP
+@with_kw struct WH_smooth_B0 <: NestedIBVP
     BD_gauss_mu    :: Float64
     BD_gauss_sigma :: Float64
     ID_gauss_mu    :: Float64
@@ -20,23 +20,23 @@ using Parameters
 end
 
 # smooth boundary data: gaussian in u and sin in z
-function outgoing(u, z, ibvp::SH_smooth_B1)
+function outgoing(u, z, ibvp::WH_smooth_B0)
     exp( -((u - ibvp.BD_gauss_mu) / ibvp.BD_gauss_sigma)^2 ) * sin(z)
 end
 
 
-BondiToy.ϕ0_of_uz(u::T, z::T, ibvp::SH_smooth_B1) where {T<:Real} =
+BondiToy.ϕ0_of_uz(u::T, z::T, ibvp::WH_smooth_B0) where {T<:Real} =
     3 * outgoing(u, z, ibvp)
 
-BondiToy.ψv0_of_uz(u::T, z::T, ibvp::SH_smooth_B1) where {T<:Real} =
+BondiToy.ψv0_of_uz(u::T, z::T, ibvp::WH_smooth_B0) where {T<:Real} =
     outgoing(u, z, ibvp)
 
 # smooth initial data: gaussian in X and sin in z
-BondiToy.ψ0_of_Xz(X::T, z::T, ibvp::SH_smooth_B1) where {T<:Real} =
+BondiToy.ψ0_of_Xz(X::T, z::T, ibvp::WH_smooth_B0) where {T<:Real} =
     exp( -((X - ibvp.ID_gauss_mu) / ibvp.ID_gauss_sigma)^2 ) * sin(z)
 
 
-toy_model = "SH_smooth_B1"
+toy_model = "WH_smooth_B0"
 root_dir="./run00"
 
 D = 0
@@ -63,17 +63,17 @@ p = Param(
     out_every = 1, #4*16*2^D,
 )
 
-ibvp = SH_smooth_B1(
+ibvp = WH_smooth_B0(
     BD_gauss_mu    = 0.5,
     BD_gauss_sigma = 0.1,
     ID_gauss_mu    = 0.5,
     ID_gauss_sigma = 0.1,
-    az_21 = 0, # 0 for SH; 1 for WH
+    az_21 = 1, # 0 for SH; 1 for WH
     b11 = 0,
-    b13 = 1,
-    b21 = 1,
+    b13 = 0,
+    b21 = 0,
     b22 = 0,
-    b23 = 1,
+    b23 = 0,
 )
 
 run_toy(p, ibvp)
