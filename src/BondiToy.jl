@@ -175,7 +175,7 @@ end
 function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::NestedIBVP)
     NX, Nz = size(ψ)
 
-    S_ϕ  = ibvp.b13 * copy(ψ)
+    S_ϕ  = ibvp.b13 * ψ
 
     Threads.@threads for j in 1:Nz
         itp  = interpolate( S_ϕ[:,j], BSpline(Cubic(Flat(OnGrid()))) )
