@@ -175,7 +175,7 @@ end
 function get_ϕψv!(ϕ, ψv, ψ, u, sys::System, ibvp::NestedIBVP)
     NX, Nz = size(ψ)
 
-    S_ϕ  = ibvp.b13 * ψ
+    S_ϕ  = ibvp.b13 * copy(ψ)
 
     Threads.@threads for j in 1:Nz
         itp  = interpolate( S_ϕ[:,j], BSpline(Cubic(Flat(OnGrid()))) )
@@ -281,16 +281,16 @@ end
 
 
 # the rhs for the time evolution equation
-function get_ψ_u!(ψ_u, ψ, ϕ, sys)
+function get_ψ_u!(ψ_u, ψ, ϕ, ψv, sys, ibvp)
     ψ_X = DX(ψ, sys)
     ψ_z = Dz(ψ, sys)
     ψ_r = sys.dXdr .* ψ_X
 
-    ψ_u .= 0.5 * ψ_r .+ ψ_z .+ ϕ
+    ψ_u .= 0.5 * ψ_r .+ ψ_z .+ ibvp.b31 * ϕ .+ ibvp.b32 * ψv .+ ibvp.b33 * ψ
 end
 function rhs_ψ!(dψ, ψ, (sys, ibvp), u)
     ϕ, ψv = get_ϕψv(ψ, u, sys, ibvp)
-    get_ψ_u!(dψ, ψ, ϕ, sys)
+    get_ψ_u!(dψ, ψ, ϕ, ψv, sys, ibvp)
     nothing
 end
 
