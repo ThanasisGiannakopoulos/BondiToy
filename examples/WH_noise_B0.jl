@@ -15,6 +15,9 @@ using Random
     b21 :: Int
     b22 :: Int
     b23 :: Int
+    b31 :: Int
+    b32 :: Int
+    b33 :: Int
 end
 
 BondiToy.ϕ0_of_uz(u::T, z::T, ibvp::WH_noise_B0) where {T<:Real} =
@@ -30,8 +33,8 @@ BondiToy.ψ0_of_Xz(X::T, z::T, ibvp::WH_noise_B0) where {T<:Real} =
 toy_model = "WH_noise_B0_norms"
 root_dir="./run00"
 
-D = 0
-noise_amplitude_drop = 0.125
+D = 4
+noise_amplitude_drop = 0.25
 
 NX = (17-1)*2^D + 1 #17 coarse
 Nz = 16*2^D #16 coarse
@@ -42,7 +45,7 @@ p = Param(
     Nz = Nz,
     cX = 10.0,
     rmin = 2.0,
-    umax = 14.0, # total time of the simulation in code units
+    umax = 1.0, # total time of the simulation in code units
 
     # uncomment the appropriate SCALING AMPLITUDE for noisy given data
     # for L2 norm
@@ -58,11 +61,14 @@ p = Param(
 ibvp = WH_noise_B0(
     noise_amplitude = noise_amplitude_drop^D,
     az_21  = 1, # 0 for SH; 1 for WH
-    b11  = 0,
-    b13  = 0,
-    b21  = 0,
-    b22  = 0,
-    b23  = 0,
+    b11 = 0,
+    b13 = 0,
+    b21 = 0,
+    b22 = 0,
+    b23 = 0,
+    b31 = 0,
+    b32 = 0,
+    b33 = 0,
 )
 
 run_toy(p, ibvp)

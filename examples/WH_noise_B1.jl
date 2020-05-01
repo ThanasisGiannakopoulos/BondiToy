@@ -15,6 +15,9 @@ using Random
     b21 :: Int
     b22 :: Int
     b23 :: Int
+    b31 :: Int
+    b32 :: Int
+    b33 :: Int
 end
 
 BondiToy.ϕ0_of_uz(u::T, z::T, ibvp::WH_noise_B1) where {T<:Real} =
@@ -63,6 +66,9 @@ ibvp = WH_noise_B1(
     b21 = 1,
     b22 = 0,
     b23 = 1,
+    b31 = 1,
+    b32 = 0,
+    b33 = 0,
 )
 
 run_toy(p, ibvp)

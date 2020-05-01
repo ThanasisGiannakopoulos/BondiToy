@@ -17,6 +17,9 @@ using Parameters
     b21 :: Int
     b22 :: Int
     b23 :: Int
+    b31 :: Int
+    b32 :: Int
+    b33 :: Int
 end
 
 # smooth boundary data: gaussian in u and sin in z
@@ -74,6 +77,9 @@ ibvp = WH_smooth_B0(
     b21 = 0,
     b22 = 0,
     b23 = 0,
+    b31 = 0,
+    b32 = 0,
+    b33 = 0,
 )
 
 run_toy(p, ibvp)

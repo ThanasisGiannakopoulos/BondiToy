@@ -5,6 +5,9 @@ using Random
 
 @with_kw struct WH_B3 <: CoupledIBVP
     noise_amplitude :: Float64
+    b31 :: Int
+    b32 :: Int
+    b33 :: Int
 end
 
 BondiToy.ϕ0_of_uz(u::T, z::T, ibvp::WH_B3) where {T<:Real} =
@@ -20,7 +23,7 @@ BondiToy.ψ0_of_Xz(X::T, z::T, ibvp::WH_B3) where {T<:Real} =
 toy_model = "WH_noise_B3_norms"
 root_dir="./run00"
 
-D = 0
+D = 4
 noise_amplitude_drop = 0.125 #0.25
 
 NX = (17-1)*2^D + 1 #17 coarse
@@ -47,6 +50,9 @@ p = Param(
 
 ibvp = WH_B3(
     noise_amplitude = noise_amplitude_drop^D,
+    b31 = 0,
+    b32 = 0,
+    b33 = 0,
 )
 
 run_toy(p, ibvp)

@@ -15,6 +15,9 @@ using Random
     b21 :: Int
     b22 :: Int
     b23 :: Int
+    b31 :: Int
+    b32 :: Int
+    b33 :: Int
 end
 
 BondiToy.ϕ0_of_uz(u::T, z::T, ibvp::SH_noise_B1) where {T<:Real} =
@@ -30,7 +33,7 @@ BondiToy.ψ0_of_Xz(X::T, z::T, ibvp::SH_noise_B1) where {T<:Real} =
 toy_model = "SH_noise_B1_norms"
 root_dir="./run00"
 
-D = 4
+D = 0
 noise_amplitude_drop = 0.25
 
 NX = (17-1)*2^D + 1 #17 coarse
@@ -58,11 +61,14 @@ p = Param(
 ibvp = SH_noise_B1(
     noise_amplitude = noise_amplitude_drop^D,
     az_21 = 0, # 0 for SH; 1 for WH
-    b11  = 0,
-    b13  = 1,
-    b21  = 1,
-    b22  = 0,
-    b23  = 1,
+    b11 = 0,
+    b13 = 1,
+    b21 = 1,
+    b22 = 0,
+    b23 = 1,
+    b31 = 1,
+    b32 = 0,
+    b33 = 0,
 )
 
 run_toy(p, ibvp)
