@@ -20,11 +20,10 @@ The module is tested against Julia 1.3.1 on Linux (Ubuntu 18.04).
 ## Instructions
 
 The different toy models are under the "examples" directory labelled
-as "(hyperbolic_character)_(given_data_type)_(source_terms).jl", where
-(hyperbolic_charater) is "WH" or "SH" for weakly and strongly
-hyperbolic respectively, (given_data_type) is "smooth" or "noise" and
-the different (source_terms) choices are "B0", "B1", "B2" and "B3". To
-run the example of choice type in bash
+as "HYPERBOLICITY_GIVENDATA_SOURCES.jl", where HYPERBOLICITY is "WH"
+or "SH" for weakly and strongly hyperbolic respectively, GIVENDATA is
+"smooth" or "noise" and the different SOURCES choices are "B0", "B1",
+"B2" and "B3". To run the example of choice type in bash
 ```
 julia example.jl
 ```
