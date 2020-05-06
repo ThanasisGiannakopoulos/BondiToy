@@ -1,7 +1,7 @@
 # BondiToy
 
 *Toy models for Bondi-like gauges of GR. Supplementary material for
- <arxiv xxxx.xxxxx>.*
+ arxiv xxxx.xxxxx.*
 
 
 ## Installation
