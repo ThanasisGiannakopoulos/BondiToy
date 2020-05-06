@@ -37,10 +37,10 @@ julia example.jl
 where n is the number of threads in multi-threading.
 
 Data are saved in "examples/run00" and their analysis can be performed
-with the scripts of the "examples/data_analysis" directory. To analyse
-the L2-norm of smooth data you first need to run
+with the scripts in "examples/data_analysis". To analyse the L2-norm
+of smooth data you first need to run
 "examples/data_analysis/norms_self_2d.jl" for the different
 resolutions that the example with smooth data is simulated. The
 resulting L2-norms can be found under
-"examples/run00/example/norms_seld_2".
+"examples/run00/example/norms_self_2".
 
