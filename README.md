@@ -10,7 +10,7 @@ Change to your local directory where the repository "BondiToy" is
 saved. The module can be installed using Julia's REPL mode:
 ```
 julia> ]
-pkg> dev .
+pkg> add .
 ```
 
 ## Project Status
