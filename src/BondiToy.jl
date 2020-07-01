@@ -342,8 +342,12 @@ function run_toy(p::Param, ibvp::IBVP)
     # save initial data
     write_2D(it, t, data_dir, ψ, ψv, ϕ)
 
+    
     if p.compute_L2_norm_every > 0
-        L2_norm = sqrt(sys.hz*sys.hX*sum(ψ.*ψ  + ψv.*ψv + ϕ.*ϕ))
+        # initiate the grid function to be used for the sum in the time domain
+        # here we sum over the z domain for the initial time
+        l2_out_x  = dt0*sys.hz*sum(ψv.*ψv + ϕ.*ϕ, dims=2)
+        L2_norm = sqrt(sys.hz*sys.hX*sum(ψ.*ψ)) + maximum(sqrt.(l2_out_x))
         outfile = joinpath(data_dir, "L2_norm.dat")
         open(outfile, "w") do io
             println(io, "# t        |      norm_L2")
@@ -353,7 +357,10 @@ function run_toy(p::Param, ibvp::IBVP)
 
     if p.compute_Lop_norm_every > 0
         ϕz = Dz(ϕ, sys)
-        Lopside_norm = sqrt(sys.hz*sys.hX*sum(ψ.*ψ  + ψv.*ψv + ϕ.*ϕ + ϕz.*ϕz ))
+        # initiate the grid function to be used for the sum in the time domain
+        # here we sum over the z domain for the initial time
+        lop_out_x = dt0*sys.hz*sum(ψv.*ψv + ϕ.*ϕ + ϕz.*ϕz, dims=2)
+        Lopside_norm = sqrt(sys.hz*sys.hX*sum(ψ.*ψ)) + maximum(sqrt.(lop_out_x))
         outfile = joinpath(data_dir, "Lopside_norm.dat")
         open(outfile, "w") do io
             println(io, "# t        |      norm_Lop")
@@ -377,7 +384,9 @@ function run_toy(p::Param, ibvp::IBVP)
         @printf "%9d %9.3f |  %9.4g    %9.4g\n" it t minimum(ψ) maximum(ψ)
 
         if p.compute_L2_norm_every > 0 && it % p.compute_L2_norm_every == 0
-            L2_norm = sqrt(sys.hz*sys.hX*sum(ψ.*ψ  + ψv.*ψv + ϕ.*ϕ))
+            # add on the l2_out_x grid function the z sums for this time instant
+            l2_out_x + = dt0*sys.hz*sum(ψv.*ψv + ϕ.*ϕ, dims=2)
+            L2_norm = sqrt(sys.hz*sys.hX*sum(ψ.*ψ)) + maximum(sqrt.(l2_out_x))
             outfile = joinpath(data_dir, "L2_norm.dat")
             open(outfile, "a") do io
                 println(io, "$t  \t  $L2_norm")
@@ -386,7 +395,9 @@ function run_toy(p::Param, ibvp::IBVP)
 
         if p.compute_Lop_norm_every > 0 && it % p.compute_Lop_norm_every == 0
             Dz!(ϕz, ϕ, sys)
-            Lopside_norm = sqrt(sys.hz*sys.hX*sum(ψ.*ψ  + ψv.*ψv + ϕ.*ϕ + ϕz.*ϕz ))
+            # add on the lop_out_x grid function the z sums for this time instant
+            lop_out_x += dt0*sys.hz*sum(ψv.*ψv + ϕ.*ϕ + ϕz.*ϕz, dims=2)
+            Lopside_norm = sqrt(sys.hz*sys.hX*sum(ψ.*ψ)) + maximum(sqrt.(lop_out_x))
             outfile = joinpath(data_dir, "Lopside_norm.dat")
             open(outfile, "a") do io
                 println(io, "$t  \t  $Lopside_norm")

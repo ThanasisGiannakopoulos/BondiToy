@@ -76,6 +76,11 @@ function L2_cmh_t(dir_c, dir_m, dir_h)
     tt     = zeros(Nf)
     L2_cmt = zeros(Nf)
     L2_mht = zeros(Nf)
+
+    # initiate the grid function for the outgoing norm
+    l2_out_cmt_x = zeros(length(xc))
+    l2_out_mht_x = zeros(length(xc))
+    
     for it in 1:Nf
         file_c = filenames_c[it]
         file_m = filenames_m[it]
@@ -108,8 +113,17 @@ function L2_cmh_t(dir_c, dir_m, dir_h)
         ϕmh  =  ϕm[1:2:end, 1:2:end]  - ϕh[1:4:end, 1:4:end]
 
         tt[it]     = tc
-        L2_cmt[it] = sqrt( sum(dzc*dxc*( ψcm.*ψcm + ψvcm.*ψvcm + ϕcm.*ϕcm)) )
-        L2_mht[it] = sqrt( sum(dzc*dxc*( ψmh.*ψmh + ψvmh.*ψvmh + ϕmh.*ϕmh)) )
+
+        # define the timestep; needed for the sum in u
+        dt0 = 0.25*minimum([dxc, dzc])
+
+        # get the outgoing part of the norm
+        l2_out_cmt_x += dt0*dzc*sum( ψvcm.*ψvcm + ϕcm.*ϕcm, dims=2)
+        l2_out_mht_x += dt0*dzc*sum( ψvmh.*ψvmh + ϕmh.*ϕmh, dims=2)
+
+        # sum the outgoing and ingoing norms to get the complete one
+        L2_cmt[it] = sqrt( sum(dzc*dxc*( ψcm.*ψcm ))) + maximum(sqrt.(l2_out_cmt_x))
+        L2_mht[it] = sqrt( sum(dzc*dxc*( ψmh.*ψmh ))) + maximum(sqrt.(l2_out_mht_x))
     end
 
     tt, L2_cmt, L2_mht
@@ -125,7 +139,8 @@ Nz = 16
 
 root_dir  = "/home/thanasis/repos/BondiToy/examples/run00/"
 #"/home/mzilhao/dev/julia/BondiToy/examples/run00/"
-toy_model = "WH_smooth_B0/"
+toy_model = "SH_smooth_B1/"
+    #"WH_smooth_B0/"
 
 # we need 3 different resolutions to build the L2 norm that is used in the self
 # convergence ratio
